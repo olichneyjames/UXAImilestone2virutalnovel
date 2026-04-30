@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meet James!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'Yomogi', cursive;
+    }
+
+    /* ── Canvas background ── */
+    #bg-canvas {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ══════════════════════════════
+       GAME SCREEN
+    ══════════════════════════════ */
+    #game-screen {
+      position: relative; z-index: 1;
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column; justify-content: flex-end;
+    }
+
+    /* Choices */
+    #choices-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      align-items: flex-start;
+    }
+    .choice-btn {
+      font-family: 'Yomogi', cursive;
+      font-size: 19px;
+      background: #fff;
+      border: 3px solid #1a1a1a;
+      padding: 11px 26px;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 #1a1a1a;
+      text-align: left;
+      width: fit-content;
+      max-width: 700px;
+      transition: transform 0.07s, box-shadow 0.07s, background 0.07s;
+    }
+    .choice-btn:hover  { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #1a1a1a; background: #f0eaff; }
+    .choice-btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 #1a1a1a; }
+
+    /* Dialogue box wrapper */
+    #dialogue-wrap { padding: 0 34px 34px; }
+
+    #dialogue-box {
+      position: relative;
+      background: #fff;
+      border: 4px solid #1a1a1a;
+      box-shadow: 6px 6px 0 #1a1a1a;
+      padding: 22px 28px 22px 244px;
+      min-height: 116px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Name tag */
+    #name-tag {
+      position: absolute;
+      top: -42px; left: 200px;
+      background: #fff;
+      border: 4px solid #1a1a1a;
+      padding: 5px 22px 2px;
+      font-size: 23px; font-weight: bold;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    /* Portrait */
+    #portrait-frame {
+      position: absolute;
+      left: -8px; bottom: -8px;
+      width: 222px; height: 222px;
+      border: 4px solid #1a1a1a;
+      background: #fff;
+      box-shadow: 5px 5px 0 #1a1a1a;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #portrait-frame.hidden { display: none !important; }
+    #portrait-img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+    }
+    /* Fallback when image is missing */
+    #portrait-fallback {
+      display: none;
+      font-size: 64px;
+      text-align: center;
+    }
+
+    /* Dialogue text */
+    #dialogue-text {
+      font-size: 20px;
+      line-height: 1.78;
+      min-height: 62px;
+      color: #1a1a1a;
+    }
+
+    /* Advance arrow */
+    #advance-arrow {
+      position: absolute;
+      bottom: 10px; right: 16px;
+      font-size: 20px; color: #555;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    #advance-arrow.show {
+      opacity: 1;
+      animation: arrowBounce 0.65s ease-in-out infinite alternate;
+    }
+    @keyframes arrowBounce {
+      from { transform: translateY(0); opacity: 0.55; }
+      to   { transform: translateY(6px); opacity: 1; }
+    }
+
+    /* ══════════════════════════════
+       BLOG SCREEN (scene 5)
+    ══════════════════════════════ */
+    #blog-screen {
+      display: none;
+      position: fixed; inset: 0; z-index: 2;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 32px; padding: 40px;
+      text-align: center;
+    }
+    #blog-screen h1 { font-size: 46px; color: #fff; line-height: 1.3; }
+    #blog-screen .sub { font-size: 22px; color: #fff; }
+
+    .tool-buttons { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+    .tool-link {
+      font-family: 'Yomogi', cursive;
+      font-size: 24px;
+      background: #fff;
+      border: 4px solid #1a1a1a;
+      padding: 14px 36px 14px 16px;
+      cursor: pointer;
+      box-shadow: 6px 6px 0 #1a1a1a;
+      text-decoration: none; color: #1a1a1a;
+      transition: transform 0.07s, box-shadow 0.07s, background 0.07s;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .tool-link:hover  { transform: translate(3px, 3px); box-shadow: 3px 3px 0 #1a1a1a; background: #f0eaff; }
+    .tool-link:active { transform: translate(6px, 6px); box-shadow: 0 0 0 #1a1a1a; }
+    .tool-portrait {
+      width: 64px; height: 64px;
+      object-fit: contain;
+      border: 2px solid #1a1a1a;
+      background: #f5f0ff;
+      flex-shrink: 0;
+    }
+
+    .blog-restart {
+      font-family: 'Yomogi', cursive;
+      font-size: 15px;
+      background: none;
+      border: 2px solid rgba(255,255,255,0.5);
+      padding: 7px 18px;
+      cursor: pointer; color: #fff;
+      box-shadow: 2px 2px 0 rgba(255,255,255,0.2);
+      transition: background 0.1s;
+    }
+    .blog-restart:hover { background: rgba(255,255,255,0.15); }
+
+    /* ══════════════════════════════
+       FAREWELL SCREEN
+    ══════════════════════════════ */
+    #farewell-screen {
+      display: none;
+      position: fixed; inset: 0; z-index: 2;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 22px; text-align: center;
+    }
+    #farewell-title { font-size: 56px; color: #fff; }
+    #farewell-msg   { font-size: 24px; color: #fff; max-width: 520px; line-height: 1.5; }
+    #restart-btn {
+      font-family: 'Yomogi', cursive;
+      font-size: 20px;
+      background: #fff;
+      border: 4px solid #1a1a1a;
+      padding: 12px 34px;
+      cursor: pointer;
+      box-shadow: 5px 5px 0 #1a1a1a;
+      transition: transform 0.07s, box-shadow 0.07s, background 0.07s;
+    }
+    #restart-btn:hover  { transform: translate(2px, 2px); box-shadow: 3px 3px 0 #1a1a1a; background: #f0eaff; }
+    #restart-btn:active { transform: translate(5px, 5px); box-shadow: 0 0 0 #1a1a1a; }
+
+    /* Skip button */
+    #skip-btn {
+      position: fixed;
+      top: 18px; left: 18px;
+      z-index: 20;
+      font-family: 'Yomogi', cursive;
+      font-size: 14px;
+      background: #fff;
+      border: 2px solid #1a1a1a;
+      padding: 6px 14px;
+      cursor: pointer;
+      box-shadow: 3px 3px 0 #1a1a1a;
+      color: #555;
+      transition: transform 0.07s, box-shadow 0.07s, background 0.07s;
+    }
+    #skip-btn:hover  { transform: translate(1px, 1px); box-shadow: 2px 2px 0 #1a1a1a; background: #f0eaff; color: #1a1a1a; }
+    #skip-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 #1a1a1a; }
+    #skip-btn.hidden { display: none; }
+
+    /* Exits label on choices */
+    .exits-label {
+      font-size: 13px;
+      color: #999;
+      margin-left: 8px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- ── Skip button (top-left, only during game) ── -->
+  <button id="skip-btn" onclick="skipToChoices()">skip ▶▶</button>
+
+  <!-- ── Game screen ── -->
+  <div id="game-screen">
+    <div id="choices-wrap"></div>
+    <div id="dialogue-wrap">
+      <div id="dialogue-box">
+        <div id="name-tag">James</div>
+        <div id="portrait-frame">
+          <img id="portrait-img" src="images/friendly.png" alt="James"
+               onerror="this.style.display='none'; document.getElementById('portrait-fallback').style.display='block'">
+          <div id="portrait-fallback">😊</div>
+        </div>
+        <div id="dialogue-text"></div>
+        <div id="advance-arrow">▼</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Blog screen (scene 5) ── -->
+  <div id="blog-screen">
+    <h1>James's AI Tool Guides ✨</h1>
+    <p class="sub">Two tools I actually use — pick one to learn more!</p>
+    <div class="tool-buttons">
+      <a href="claude-guide.html" class="tool-link">
+        <img src="images/excited.png" class="tool-portrait" alt="">
+        Claude
+      </a>
+      <a href="nanobanana-guide.html" class="tool-link">
+        <img src="images/friendly.png" class="tool-portrait" alt="">
+        Nano Banana 2
+      </a>
+    </div>
+    <button class="blog-restart" onclick="startGame()">← Start over</button>
+  </div>
+
+  <!-- ── Farewell screen ── -->
+  <div id="farewell-screen">
+    <div id="farewell-title">👋</div>
+    <div id="farewell-msg">See you next time!</div>
+    <button id="restart-btn" onclick="startGame()">Play again?</button>
+  </div>
+
+  <script>
+    const SPEED = 28; // ms per character
+
+    const scenes = {
+      1: {
+        portrait: 'friendly', name: 'James',
+        lines: ["Hi! I'm James!", "Nice to meet you!"],
+        after: { type: 'pause_goto', target: 2, delay: 1400 }
+      },
+      2: {
+        portrait: 'questioning', name: 'James',
+        lines: ["You're some type of UX Designer right?"],
+        choices: [
+          { text: "Yea!", goto: 3 },
+          { text: "Nope!", goto: 4 }
+        ]
+      },
+      3: {
+        portrait: 'excited', name: 'James',
+        lines: [
+          "Great! Want to learn the two AI tools I use in my designs?",
+          "There's no employment in the virtual world! So I can show you whenever you'd like!"
+        ],
+        choices: [
+          { text: "Yea! Let's learn two AI tools!", goto: 5 },
+          { text: "Ew AI is GROSS", goto: 6 }
+        ]
+      },
+      4: {
+        portrait: 'sad', name: 'James',
+        lines: [
+          "O then I don't think I can help you!",
+          "Best of luck out there and nice meeting you *even though this was a bit awkward*!"
+        ],
+        choices: [
+          { text: "Bye!", action: 'exit', title: '👋', msg: 'Thanks for stopping by!' },
+          { text: "Stick around and learn about two AI tools anyway", goto: 5 }
+        ]
+      },
+      5: { type: 'blog' },
+      6: {
+        portrait: 'questioning', name: 'James',
+        lines: [
+          "Yea AI is super gross, is the stolen work of countless workers and has tons of dangerous effects on society!",
+          "But, it helped me make this fun little game and I can't take down capitalism alone!"
+        ],
+        choices: [
+          { text: "AI gives me ick", goto: 7 },
+          { text: "Team up with James and take back the means of production", goto: 8 }
+        ]
+      },
+      7: {
+        portrait: 'friendly', name: 'James',
+        lines: [
+          "Then let's not talk about AI any more today, but if you ever want to learn about the best few tools feel free to come back another time!"
+        ],
+        choices: [
+          { text: "See you!", action: 'exit', title: '🌸', msg: 'Come back anytime!' },
+          { text: "Just kidding! B2B SAS AI is exactly what five year old me dreamt of doing!", goto: 4 }
+        ]
+      },
+      8: {
+        portrait: 'excited', name: 'James',
+        lines: [
+          "Woah! With the means of production, we don't have to learn about AI!",
+          "Or maybe we can develop something like AI that benefits everyone!"
+        ],
+        after: { type: 'goto', target: 9 }
+      },
+      9: {
+        portrait: 'friendly', name: 'James',
+        lines: [
+          "Thanks for playing!",
+          "And if you STILL want to learn about AI tools I wrote guides to my two favorites here!"
+        ],
+        choices: [
+          { text: "You win the game! Healthcare for everyone!", action: 'exit', title: '🎉', msg: 'YOU WIN!\nHealthcare for everyone!' },
+          { text: "Fine, I guess it's AI learning time", goto: 5 }
+        ]
+      }
+    };
+
+    // DOM refs
+    const gameScreen     = document.getElementById('game-screen');
+    const blogScreen     = document.getElementById('blog-screen');
+    const farewellScreen = document.getElementById('farewell-screen');
+    const dialogueBox    = document.getElementById('dialogue-box');
+    const dialogueText   = document.getElementById('dialogue-text');
+    const nameTag        = document.getElementById('name-tag');
+    const portraitFrame  = document.getElementById('portrait-frame');
+    const portraitImg    = document.getElementById('portrait-img');
+    const portraitFB     = document.getElementById('portrait-fallback');
+    const choicesWrap    = document.getElementById('choices-wrap');
+    const advanceArrow   = document.getElementById('advance-arrow');
+    const farewellTitle  = document.getElementById('farewell-title');
+    const farewellMsg    = document.getElementById('farewell-msg');
+    const skipBtn        = document.getElementById('skip-btn');
+
+    // Emoji fallbacks per emotion
+    const emojiFallback = { friendly: '😊', excited: '🤩', sad: '😔', questioning: '🤔' };
+
+    let st = {};
+
+    function skipToChoices() {
+      clearTimeout(st.timer);
+      clearTimeout(st.autoTimer);
+      gotoScene(5);
+    }
+
+    function startGame() {
+      show(gameScreen);
+      hide(blogScreen);
+      hide(farewellScreen);
+      skipBtn.classList.remove('hidden');
+      st = { scene: 0, lineIdx: 0, typing: false, timer: null, autoTimer: null, awaitClick: false, choiceUp: false };
+      gotoScene(1);
+    }
+
+    function gotoScene(id) {
+      clearTimeout(st.autoTimer);
+      st.scene    = id;
+      st.lineIdx  = 0;
+      st.choiceUp = false;
+      choicesWrap.innerHTML     = '';
+      choicesWrap.style.display = 'none';
+      hideArrow();
+
+      const sc = scenes[id];
+      if (sc.type === 'blog') {
+        fadeToAction(() => { hide(gameScreen); show(blogScreen); skipBtn.classList.add('hidden'); });
+        return;
+      }
+
+      // Update portrait
+      portraitFrame.classList.remove('hidden');
+      portraitImg.style.display = 'block';
+      portraitFB.style.display  = 'none';
+      portraitImg.src = `images/${sc.portrait}.png`;
+      portraitImg.onerror = () => {
+        portraitImg.style.display = 'none';
+        portraitFB.textContent = emojiFallback[sc.portrait] || '🙂';
+        portraitFB.style.display = 'block';
+      };
+      nameTag.textContent = sc.name || '';
+      showLine(0);
+    }
+
+    function showLine(idx) {
+      st.lineIdx    = idx;
+      st.awaitClick = false;
+      hideArrow();
+      typeText(scenes[st.scene].lines[idx]);
+    }
+
+    // ── Typewriter ──
+    let tw = { text: '', idx: 0 };
+
+    function typeText(text) {
+      st.typing = true;
+      clearTimeout(st.timer);
+      tw.text = text;
+      tw.idx  = 0;
+      dialogueText.textContent = '';
+      typeStep();
+    }
+
+    function typeStep() {
+      if (tw.idx < tw.text.length) {
+        dialogueText.textContent += tw.text[tw.idx++];
+        st.timer = setTimeout(typeStep, SPEED);
+      } else {
+        st.typing = false;
+        onTypeDone();
+      }
+    }
+
+    function skipType() {
+      clearTimeout(st.timer);
+      dialogueText.textContent = tw.text;
+      tw.idx    = tw.text.length;
+      st.typing = false;
+      onTypeDone();
+    }
+
+    function onTypeDone() {
+      const sc     = scenes[st.scene];
+      const isLast = st.lineIdx === sc.lines.length - 1;
+
+      if (!isLast) {
+        st.awaitClick = true;
+        showArrow();
+        return;
+      }
+
+      if (sc.choices) {
+        st.awaitClick = true;
+        showArrow();
+      } else if (sc.after) {
+        showArrow();
+        st.awaitClick = true;
+        if (sc.after.type === 'pause_goto') {
+          st.autoTimer = setTimeout(() => {
+            hideArrow();
+            fadeToAction(() => gotoScene(sc.after.target));
+          }, sc.after.delay);
+        }
+      }
+    }
+
+    function handleClick() {
+      if (st.typing) { skipType(); return; }
+      if (!st.awaitClick) return;
+
+      const sc     = scenes[st.scene];
+      const isLast = st.lineIdx === sc.lines.length - 1;
+
+      if (!isLast) {
+        st.awaitClick = false;
+        hideArrow();
+        showLine(st.lineIdx + 1);
+        return;
+      }
+
+      if (sc.choices && !st.choiceUp) {
+        st.awaitClick = false;
+        hideArrow();
+        showChoices();
+        return;
+      }
+
+      if (sc.after) {
+        clearTimeout(st.autoTimer);
+        fadeToAction(() => gotoScene(sc.after.target));
+      }
+    }
+
+    function showChoices() {
+      st.choiceUp = true;
+      const sc = scenes[st.scene];
+      choicesWrap.style.display = 'flex';
+      sc.choices.forEach(ch => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = ch.text;
+        if (ch.action === 'exit') {
+          const label = document.createElement('span');
+          label.className = 'exits-label';
+          label.textContent = '(exits)';
+          btn.appendChild(label);
+        }
+        btn.addEventListener('click', () => pickChoice(ch));
+        choicesWrap.appendChild(btn);
+      });
+    }
+
+    function pickChoice(ch) {
+      choicesWrap.innerHTML     = '';
+      choicesWrap.style.display = 'none';
+      st.choiceUp = false;
+
+      if (ch.action === 'exit') {
+        farewellTitle.textContent = ch.title || '👋';
+        farewellMsg.textContent   = ch.msg   || 'See you next time!';
+        fadeToAction(() => { hide(gameScreen); show(farewellScreen); skipBtn.classList.add('hidden'); });
+      } else {
+        fadeToAction(() => gotoScene(ch.goto));
+      }
+    }
+
+    function showArrow() { advanceArrow.classList.add('show'); }
+    function hideArrow() { advanceArrow.classList.remove('show'); }
+    function show(el)    { el.style.display = 'flex'; }
+    function hide(el)    { el.style.display = 'none'; }
+
+    function fadeToAction(cb) { cb(); }
+
+    dialogueBox.addEventListener('click', handleClick);
+    window.addEventListener('load', () => {
+      if (window.location.hash === '#blog') gotoScene(5);
+    });
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault();
+        handleClick();
+      }
+    });
+
+
+    // ── Canvas background ──────────────────────────────────
+    (function () {
+      const canvas = document.getElementById('bg-canvas');
+      const ctx    = canvas.getContext('2d');
+      let W, H;
+      let mouse    = { x: -9999, y: -9999, vx: 0, vy: 0, px: -9999, py: -9999 };
+      let mouseSpd = 0;
+
+      function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+      document.addEventListener('mousemove', e => {
+        mouse.vx = e.clientX - mouse.x;
+        mouse.vy = e.clientY - mouse.y;
+        mouseSpd = Math.min(Math.sqrt(mouse.vx * mouse.vx + mouse.vy * mouse.vy), 60);
+        mouse.x  = e.clientX;
+        mouse.y  = e.clientY;
+      });
+
+      const COLORS = [
+        '#ff1493','#ff00cc','#cc00ff','#ff4dbb',
+        '#9933ff','#ff69b4','#e600cc','#aa00ff','#ff0077'
+      ];
+      const rand  = () => Math.random();
+      const pick  = () => COLORS[Math.floor(rand() * COLORS.length)];
+
+      // Large soft blobs
+      const blobs = Array.from({ length: 14 }, () => ({
+        x: rand() * window.innerWidth,
+        y: rand() * window.innerHeight,
+        r: 70 + rand() * 100,
+        vx: (rand() - 0.5) * 0.35,
+        vy: (rand() - 0.5) * 0.35,
+        bvx: 0, bvy: 0,
+        color: pick()
+      }));
+      blobs.forEach(b => { b.bvx = b.vx; b.bvy = b.vy; });
+
+      // Small bright dots
+      const dots = Array.from({ length: 130 }, () => {
+        const vx = (rand() - 0.5) * 0.9, vy = (rand() - 0.5) * 0.9;
+        return {
+          x: rand() * window.innerWidth,
+          y: rand() * window.innerHeight,
+          r: 2 + rand() * 4.5,
+          vx, vy, bvx: vx, bvy: vy,
+          color: pick(),
+          phase: rand() * Math.PI * 2,
+          ps: 0.012 + rand() * 0.018
+        };
+      });
+
+      function stepParticle(p, range, strength, maxV) {
+        const dx = mouse.x - p.x, dy = mouse.y - p.y;
+        const d  = Math.sqrt(dx * dx + dy * dy);
+        if (d < range && d > 0) {
+          // Repulsion — scatter away; scale up with mouse speed
+          const speedBoost = 1 + mouseSpd * 0.06;
+          const f = (range - d) / range * strength * speedBoost;
+          p.vx -= dx / d * f;
+          p.vy -= dy / d * f;
+        }
+        // Slow return to base drift
+        p.vx += (p.bvx - p.vx) * 0.012;
+        p.vy += (p.bvy - p.vy) * 0.012;
+        const sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+        if (sp > maxV) { p.vx *= maxV / sp; p.vy *= maxV / sp; }
+        p.x += p.vx; p.y += p.vy;
+        const pad = p.r * 3;
+        if (p.x < -pad) p.x = W + p.r;
+        if (p.x > W + pad) p.x = -p.r;
+        if (p.y < -pad) p.y = H + p.r;
+        if (p.y > H + pad) p.y = -p.r;
+      }
+
+      function frame() {
+        ctx.fillStyle = '#1a0030';
+        ctx.fillRect(0, 0, W, H);
+
+        // Mouse glow
+        if (mouse.x > 0) {
+          const glowR = 180 + mouseSpd * 3;
+          const g0 = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, glowR);
+          g0.addColorStop(0,   'rgba(255,20,147,0.22)');
+          g0.addColorStop(0.4, 'rgba(180,0,255,0.10)');
+          g0.addColorStop(1,   'rgba(0,0,0,0)');
+          ctx.beginPath();
+          ctx.arc(mouse.x, mouse.y, glowR, 0, Math.PI * 2);
+          ctx.fillStyle = g0;
+          ctx.fill();
+        }
+
+        // Blobs
+        blobs.forEach(b => {
+          stepParticle(b, 380, 0.22, 5);
+          const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+          g.addColorStop(0, b.color + '66');
+          g.addColorStop(1, b.color + '00');
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.fillStyle = g;
+          ctx.fill();
+        });
+
+        // Dots
+        dots.forEach(d => {
+          stepParticle(d, 260, 0.55, 12);
+          d.phase += d.ps;
+          ctx.globalAlpha = 0.55 + Math.sin(d.phase) * 0.3;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+          ctx.fillStyle = d.color;
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+        // Decay mouse speed
+        mouseSpd *= 0.88;
+
+        requestAnimationFrame(frame);
+      }
+      frame();
+    })();
+
+    startGame();
+  </script>
+</body>
+</html>
