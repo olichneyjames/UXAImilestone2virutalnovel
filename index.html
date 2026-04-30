@@ -75,7 +75,7 @@
     /* Name tag */
     #name-tag {
       position: absolute;
-      top: -42px; left: 200px;
+      top: -54px; left: 200px;
       background: #fff;
       border: 4px solid #1a1a1a;
       padding: 5px 22px 2px;
@@ -240,7 +240,7 @@
   <canvas id="bg-canvas"></canvas>
 
   <!-- ── Skip button (top-left, only during game) ── -->
-  <button id="skip-btn" onclick="skipToChoices()">skip ▶▶</button>
+  <button id="skip-btn" onclick="skipToChoices()">skip >></button>
 
   <!-- ── Game screen ── -->
   <div id="game-screen">
@@ -251,7 +251,7 @@
         <div id="portrait-frame">
           <img id="portrait-img" src="images/friendly.png" alt="James"
                onerror="this.style.display='none'; document.getElementById('portrait-fallback').style.display='block'">
-          <div id="portrait-fallback">😊</div>
+          <div id="portrait-fallback">?</div>
         </div>
         <div id="dialogue-text"></div>
         <div id="advance-arrow">▼</div>
@@ -261,7 +261,7 @@
 
   <!-- ── Blog screen (scene 5) ── -->
   <div id="blog-screen">
-    <h1>James's AI Tool Guides ✨</h1>
+    <h1>James's AI Tool Guides</h1>
     <p class="sub">Two tools I actually use — pick one to learn more!</p>
     <div class="tool-buttons">
       <a href="claude-guide.html" class="tool-link">
@@ -278,7 +278,7 @@
 
   <!-- ── Farewell screen ── -->
   <div id="farewell-screen">
-    <div id="farewell-title">👋</div>
+    <div id="farewell-title"></div>
     <div id="farewell-msg">See you next time!</div>
     <button id="restart-btn" onclick="startGame()">Play again?</button>
   </div>
@@ -318,7 +318,7 @@
           "Best of luck out there and nice meeting you *even though this was a bit awkward*!"
         ],
         choices: [
-          { text: "Bye!", action: 'exit', title: '👋', msg: 'Thanks for stopping by!' },
+          { text: "Bye!", action: 'exit', title: '', msg: 'Thanks for stopping by!' },
           { text: "Stick around and learn about two AI tools anyway", goto: 5 }
         ]
       },
@@ -340,7 +340,7 @@
           "Then let's not talk about AI any more today, but if you ever want to learn about the best few tools feel free to come back another time!"
         ],
         choices: [
-          { text: "See you!", action: 'exit', title: '🌸', msg: 'Come back anytime!' },
+          { text: "See you!", action: 'exit', title: '', msg: 'Come back anytime!' },
           { text: "Just kidding! B2B SAS AI is exactly what five year old me dreamt of doing!", goto: 4 }
         ]
       },
@@ -359,7 +359,7 @@
           "And if you STILL want to learn about AI tools I wrote guides to my two favorites here!"
         ],
         choices: [
-          { text: "You win the game! Healthcare for everyone!", action: 'exit', title: '🎉', msg: 'YOU WIN!\nHealthcare for everyone!' },
+          { text: "You win the game! Healthcare for everyone!", action: 'exit', title: '', msg: 'YOU WIN!\nHealthcare for everyone!' },
           { text: "Fine, I guess it's AI learning time", goto: 5 }
         ]
       }
@@ -382,7 +382,7 @@
     const skipBtn        = document.getElementById('skip-btn');
 
     // Emoji fallbacks per emotion
-    const emojiFallback = { friendly: '😊', excited: '🤩', sad: '😔', questioning: '🤔' };
+    const emojiFallback = { friendly: '?', excited: '?', sad: '?', questioning: '?' };
 
     let st = {};
 
